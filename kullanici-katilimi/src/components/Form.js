@@ -1,38 +1,41 @@
 import React, { useState, useEffect } from "react";
 import * as Yup from "yup";
+import axios from "axios";
 
-const initialState = {
-  name: "deniz",
-  email: "mail@mail.com",
-  sifre: "123",
-  kutu: true,
-};
-
-const sema = Yup.object().shape({
+const sema = Yup.object({
   name: Yup.string()
     .required("İsim-soyisim zorunludur.")
-    .min(5, "İsim en az 5 karakter olmalı."),
+    .min(3, "İsim en az 3 karakter olmalı."),
 
   email: Yup.string()
     .required("Eposta adresi gerekli.")
     .matches(/[^0-9]/),
 
-  sifre: Yup.string()
+  pass: Yup.string()
     .required("Şifre gerekli.")
     .min(7, "Şifre en az 7 karakter olmalı ve sadece sayı olmamalı")
-    .matches(/[^0-9]/),
+    .matches(/[^0-9]/, "Şifre sadece sayı olamaz"),
 
-  kutu: Yup.boolean().oneOf([true], "Kabul etmek zorunlu"),
+  terms: Yup.boolean().oneOf([true], "Kabul etmek zorunlu"),
 });
 
 export default function Form() {
-  const [formData, setFormData] = useState(initialState);
+  const initialFormData = {
+    name: "",
+    email: "",
+    pass: "",
+    terms: false,
+  };
+  const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
-  const [isFormValid, setFormValid] = useState(false);
+  const [isDisabled, setIsDisabled] = useState(true);
+  const [kullanicilar, setKullanicilar] = useState([]);
 
   useEffect(() => {
+    setIsDisabled(true);
+    //yup sema doğruysa
     sema.isValid(formData).then((valid) => {
-      setFormValid(valid);
+      setIsDisabled(!valid);
     });
   }, [formData]);
 
@@ -50,13 +53,22 @@ export default function Form() {
     Yup.reach(sema, e.target.name)
       .validate(value)
       .then((valid) => {
-        setFormValid(true);
+        setIsDisabled(false);
+
+        const newErrors = {
+          ...errors,
+          [e.target.name]: null,
+        };
+        setErrors(newErrors);
       })
       .catch((err) => {
-        setErrors({
+        setIsDisabled(true);
+
+        const newErrors = {
           ...errors,
           [e.target.name]: err.errors[0],
-        });
+        };
+        setErrors(newErrors);
       });
 
     setFormData(newFormData);
@@ -64,69 +76,81 @@ export default function Form() {
 
   function submitHandler(e) {
     e.preventDefault();
+    if (isDisabled) {
+      console.log("formda hatalar var");
+    } else {
+      axios
+        .post("https://reqres.in/api/users", formData)
+        .then(function (response) {
+          console.log("form gönderildi", response.data);
+          console.log(response);
+
+          setKullanicilar([...kullanicilar, response.data]);
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+    }
   }
 
   return (
-    <>
+    <div>
       <form onSubmit={submitHandler}>
-        <br />
-        <br />
-
-        <label>
-          <span>İsim</span>
+        <div>
+          <label htmlFor="name">İsim ve Soyisim </label>
           <input
             name="name"
             type="text"
             placeholder="isim-soyisim"
             value={formData.name}
             onChange={handleChange}
-          ></input>
-        </label>
+          />
+          {errors.name && <p>{errors.name}</p>}
+        </div>
 
-        <br />
-        <br />
-
-        <label>
-          <span>Email</span>
+        <div>
+          <label htmlFor="email">Eposta</label>
           <input
             name="email"
             type="email"
             value={formData.email}
             onChange={handleChange}
-          ></input>
-        </label>
+          />
+          {errors.email && <p>{errors.email}</p>}
+        </div>
 
-        <br />
-        <br />
-
-        <label>
-          <span>Şifre</span>
+        <div>
+          <label htmlFor="pass">Şifre</label>
           <input
-            name="sifre"
+            name="pass"
             type="password"
-            value={formData.sifre}
+            value={formData.pass}
             onChange={handleChange}
-          ></input>
-        </label>
+          />
+          {errors.pass && <p>{errors.pass}</p>}
+        </div>
 
-        <br />
-        <br />
-
-        <label>
-          <span>Kullanım Şartları</span>
+        <div>
+          <label htmlFor="terms">Kullanım Şartları</label>
           <input
-            name="kutu"
+            name="terms"
             type="checkbox"
-            checked={formData.kutu}
+            checked={formData.terms}
             onChange={handleChange}
-          ></input>
-        </label>
-        <br />
-        <br />
-        <button type="submit" disabled={!isFormValid}>
+          />
+          {errors.terms && <p>{errors.terms}</p>}
+        </div>
+
+        <button type="submit" disabled={isDisabled}>
           Gönder
         </button>
       </form>
-    </>
+
+      <ul>
+        {kullanicilar.map((kullanici) => {
+          return <li key={kullanici.id}>{kullanici.name}</li>;
+        })}
+      </ul>
+    </div>
   );
 }
