@@ -9,7 +9,7 @@ const sema = Yup.object({
 
   email: Yup.string()
     .required("Eposta adresi gerekli.")
-    .matches(/[^0-9]/),
+    .email("Güvercin seni böyle bulamaz"),
 
   pass: Yup.string()
     .required("Şifre gerekli.")
@@ -99,49 +99,53 @@ export default function Form() {
         <div>
           <label htmlFor="name">İsim ve Soyisim </label>
           <input
+            data-testid="name"
             name="name"
             type="text"
             placeholder="isim-soyisim"
             value={formData.name}
             onChange={handleChange}
           />
-          {errors.name && <p>{errors.name}</p>}
+          {errors.name && <p className="error">{errors.name}</p>}
         </div>
 
         <div>
           <label htmlFor="email">Eposta</label>
           <input
+            data-testid="email"
             name="email"
             type="email"
             value={formData.email}
             onChange={handleChange}
           />
-          {errors.email && <p>{errors.email}</p>}
+          {errors.email && <p className="error">{errors.email}</p>}
         </div>
 
         <div>
           <label htmlFor="pass">Şifre</label>
           <input
+            data-testid="pass"
             name="pass"
             type="password"
             value={formData.pass}
             onChange={handleChange}
           />
-          {errors.pass && <p>{errors.pass}</p>}
+          {errors.pass && <p className="error">{errors.pass}</p>}
         </div>
 
         <div>
           <label htmlFor="terms">Kullanım Şartları</label>
           <input
+            data-testid="terms"
             name="terms"
             type="checkbox"
             checked={formData.terms}
             onChange={handleChange}
           />
-          {errors.terms && <p>{errors.terms}</p>}
+          {errors.terms && <p className="error">{errors.terms}</p>}
         </div>
 
-        <button type="submit" disabled={isDisabled}>
+        <button data-testid="submit" type="submit" disabled={isDisabled}>
           Gönder
         </button>
       </form>
